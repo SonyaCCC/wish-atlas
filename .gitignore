@@ -1,0 +1,12 @@
+data/
+*.log
+.tmp/
+release/
+node_modules/
+.env
+.env.*
+*.zip
+*.exe
+*.png
+*.local.json
+.DS_Store

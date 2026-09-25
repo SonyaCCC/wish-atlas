@@ -1,0 +1,46 @@
+name: Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify tag and source
+        run: node scripts/check-release.mjs
+      - name: Test statistics and API
+        run: node --test tests/*.test.mjs
+      - name: Download verified Electron runtime
+        run: node scripts/download-electron.mjs
+      - name: Build a clean portable app
+        shell: pwsh
+        run: |
+          ./scripts/package-desktop.ps1
+          ./scripts/archive-desktop.ps1
+      - name: Verify desktop startup
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $env:WISH_DESKTOP_DATA_DIR = Join-Path $env:RUNNER_TEMP 'wish-smoke-data'
+          $env:WISH_DESKTOP_SMOKE_RESULT = Join-Path $env:RUNNER_TEMP 'wish-smoke.json'
+          $exe = Join-Path (Get-Location) "release/WishAtlas-$version-win-x64-clean/祈愿手账.exe"
+          $process = Start-Process -FilePath $exe -WindowStyle Hidden -PassThru
+          if (-not $process.WaitForExit(45000)) { throw 'Desktop startup timed out' }
+          $result = Get-Content $env:WISH_DESKTOP_SMOKE_RESULT -Raw | ConvertFrom-Json
+          if (-not $result.ok -or $result.accounts -ne 0) { throw 'Desktop smoke test failed' }
+      - name: Publish Windows download
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          gh release create $env:GITHUB_REF_NAME "release/WishAtlas-$version-windows-x64.zip" "release/WishAtlas-$version-windows-x64.zip.sha256" --verify-tag --title "祈愿手账 $version" --notes-file RELEASE_NOTES.md
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release failed' }

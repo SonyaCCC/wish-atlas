@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
+const folder=path.resolve(process.argv[2]??path.join(root,'release',`WishAtlas-${version}-win-x64-with-records`));
+const releaseRoot=path.join(root,'release');
+if(!folder.startsWith(releaseRoot+path.sep))throw Error('分享目录必须在 release 内');
+const file=path.join(folder,'data','records.json');
+const db=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{accounts:[]};
+const counts=db.accounts.map(a=>({uid:a.uid,records:a.records.length}));
+const total=counts.reduce((n,a)=>n+a.records,0);
+const notes=[`祈愿手账 ${version} · Windows x64 分享包`,'打包时间：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'',...counts.map(a=>`UID ${a.uid}：${a.records} 条记录`),`合计：${counts.length} 个账号，${total} 条记录。`,'','这些是打包时的档案副本，含 UID、物品、抽卡时间及手动标记。','不包含游戏账号密码、authkey、服务器日志、自动快照或测试数据。','之后两台电脑的更改互不影响；完整恢复或迁移请用“导出完整备份”。','双击祈愿手账.exe 使用，详细步骤见使用说明.txt。'];
+fs.writeFileSync(path.join(folder,'档案清单.txt'),'\ufeff'+notes.join('\r\n'));
+const guide=fs.readFileSync(path.join(root,'给朋友的使用说明.md'),'utf8');
+fs.writeFileSync(path.join(folder,'给朋友的使用说明.md'),guide);
+fs.writeFileSync(path.join(folder,'使用说明.txt'),'\ufeff'+guide.replace(/^#+ /gm,'').replaceAll('**','').replaceAll('`','').replaceAll('\n','\r\n'));
+const entries=[];
+function visit(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){const full=path.join(dir,entry.name);if(entry.isDirectory())visit(full);else{const name=path.relative(folder,full).replaceAll('\\','/');if(name==='SHA256SUMS.txt')continue;const sha=createHash('sha256').update(fs.readFileSync(full)).digest('hex');entries.push(sha+'  '+name);}}}
+visit(folder);fs.writeFileSync(path.join(folder,'SHA256SUMS.txt'),entries.join('\n')+'\n');
+console.log(JSON.stringify({folder,accounts:counts,total,files:entries.length}));
