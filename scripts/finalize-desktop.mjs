@@ -11,7 +11,7 @@ const file=path.join(folder,'data','records.json');
 const db=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{accounts:[]};
 const counts=db.accounts.map(a=>({uid:a.uid,records:a.records.length}));
 const total=counts.reduce((n,a)=>n+a.records,0);
-const notes=[`祈愿手账 ${version} · Windows x64 分享包`,'打包时间：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'',...counts.map(a=>`UID ${a.uid}：${a.records} 条记录`),`合计：${counts.length} 个账号，${total} 条记录。`,'','这些是打包时的档案副本，含 UID、物品、抽卡时间及手动标记。','不包含游戏账号密码、authkey、服务器日志、自动快照或测试数据。','之后两台电脑的更改互不影响；完整恢复或迁移请用“导出完整备份”。','双击祈愿手账.exe 使用，详细步骤见使用说明.txt。'];
+const notes=[`祈愿手账 ${version} · Windows x64 分享包`,'打包时间：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'',...counts.map(a=>`UID ${a.uid}：${a.records} 条记录`),`合计：${counts.length} 个账号，${total} 条记录。`,'','这些是打包时的档案副本，含 UID、物品、抽卡时间及手动标记。','不包含游戏账号密码、authkey、服务器日志、自动快照或测试数据。','1.3.1 起桌面数据保存在 %APPDATA%/WishAtlas/data；更新后沿用已有档案。附带快照不会覆盖已存在档案，分享记录请另行导入完整备份。','双击祈愿手账.exe 使用，详细步骤见使用说明.txt。'];
 fs.writeFileSync(path.join(folder,'档案清单.txt'),'\ufeff'+notes.join('\r\n'));
 const guide=fs.readFileSync(path.join(root,'给朋友的使用说明.md'),'utf8');
 fs.writeFileSync(path.join(folder,'给朋友的使用说明.md'),guide);

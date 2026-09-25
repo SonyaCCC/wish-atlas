@@ -36,7 +36,14 @@ jobs:
           if (-not $process.WaitForExit(45000)) { throw 'Desktop startup timed out' }
           $result = Get-Content $env:WISH_DESKTOP_SMOKE_RESULT -Raw | ConvertFrom-Json
           if (-not $result.ok -or $result.accounts -ne 0) { throw 'Desktop smoke test failed' }
+      - name: Verify migration and next-version data preservation
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          node scripts/smoke-upgrade.mjs "release/WishAtlas-$version-win-x64-clean/祈愿手账.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Upgrade data preservation failed' }
       - name: Publish Windows download
+        if: success()
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}

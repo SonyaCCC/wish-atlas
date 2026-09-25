@@ -1,17 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtemp,readFile,readdir,stat} from 'node:fs/promises';
+import {mkdtemp,readFile,readdir,stat,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 test('local server persists manual/import records, enforces token and recovers backup',async t=>{
  const dir=await mkdtemp(path.join(tmpdir(),'wish-atlas-test-'));
+ await writeFile(path.join(dir,'records.json'),'\ufeff'+JSON.stringify({accounts:[]}));
  const child=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),env:{...process.env,PORT:'0',WISH_DATA_DIR:dir},windowsHide:true,stdio:['ignore','pipe','pipe']});
  t.after(()=>child.kill());
  const base=await new Promise((resolve,reject)=>{child.stdout.on('data',data=>{const m=data.toString().match(/http:\/\/127.0.0.1:\d+/);if(m)resolve(m[0]);});child.on('error',reject);child.on('exit',()=>reject(Error('server stopped')));});
  const html=await(await fetch(base)).text();const token=html.match(/name="wish-token" content="([^"]+)"/)[1];
  const call=async(route,body)=>{const res=await fetch(base+route,{method:body?'POST':'GET',headers:{'x-wish-token':token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {status:res.status,data:await res.json()};};
  assert.equal((await fetch(base+'/api/state')).status,403);
+ assert.equal((await call('/api/storage')).data.file,path.join(dir,'records.json'));
  assert.equal((await fetch(base+'/data/records.json')).status,404);
  assert.equal((await fetch(base+'/api/state',{headers:{'x-wish-token':token,origin:'https://evil.example'}})).status,403);
  assert.equal((await call('/api/account',{uid:'123456789',timezone:8})).status,200);

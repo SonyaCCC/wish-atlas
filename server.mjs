@@ -10,7 +10,7 @@ const dataDir=process.env.WISH_DATA_DIR||path.join(root,'data');
 fs.mkdirSync(dataDir,{recursive:true});
 const storePath=path.join(dataDir,'records.json');
 let db={accounts:[]};
-if(fs.existsSync(storePath)) {try{db=JSON.parse(fs.readFileSync(storePath,'utf8'));if(!Array.isArray(db.accounts))throw Error();}catch{console.error('数据文件损坏。请从 data/backups 恢复 records.json 后重启；未覆盖原文件。');process.exit(1);}}
+if(fs.existsSync(storePath)) {try{db=JSON.parse(fs.readFileSync(storePath,'utf8').replace(/^\uFEFF/,''));if(!Array.isArray(db.accounts))throw Error();}catch{console.error('数据文件损坏。请从 data/backups 恢复 records.json 后重启；未覆盖原文件。');process.exit(1);}}
 function save(accounts) {
   const next={accounts,updated:new Date().toISOString()};
   const tmp=storePath+'.tmp';fs.writeFileSync(tmp,JSON.stringify(next,null,2),'utf8');
@@ -41,6 +41,7 @@ const server=http.createServer(async(req,res)=>{
     if(url.pathname.startsWith('/api/')) {
       if(req.headers['x-wish-token']!==token)return respond(res,403,{error:'请刷新页面后重试'});
       if(req.method==='GET'&&url.pathname==='/api/state')return respond(res,200,db);
+      if(req.method==='GET'&&url.pathname==='/api/storage')return respond(res,200,{file:storePath,desktop:process.env.WISH_DESKTOP==='1'});
       if(req.method==='GET'&&url.pathname==='/api/job')return respond(res,200,job??{status:'idle'});
       if(req.method==='GET'&&url.pathname==='/api/export')return respond(res,200,url.searchParams.get('format')==='uigf'?exportUIGF(db.accounts):{format:'wish-atlas-backup-v1',...db});
       if(req.method!=='POST')return respond(res,405,{error:'不支持的操作'});

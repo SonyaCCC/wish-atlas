@@ -156,5 +156,5 @@ export function analyze(account,calendar=[]) {
   return {pools,total:Object.values(pools).reduce((s,p)=>s+p.total,0),fives:Object.values(pools).reduce((s,p)=>s+p.fives.length,0),records};
 }
 export function exportUIGF(accounts) {
-  return {info:{export_timestamp:Math.floor(Date.now()/1000),export_app:'Wish Atlas',export_app_version:'1.3.0',version:'v4.0'},hk4e:accounts.map(a=>({uid:a.uid,timezone:a.timezone,lang:'zh-cn',list:a.records.filter(r=>r.kind!=='summary'&&/^\d+$/.test(r.id)&&r.source!=='manual').map(r=>({id:r.id,gacha_type:r.gacha_type,uigf_gacha_type:poolOf(r),item_id:r.item_id,name:r.name,item_type:r.item_type,rank_type:r.rank_type,time:r.time,count:'1'}))}))};
+  return {info:{export_timestamp:Math.floor(Date.now()/1000),export_app:'Wish Atlas',export_app_version:'1.3.1',version:'v4.0'},hk4e:accounts.map(a=>({uid:a.uid,timezone:a.timezone,lang:'zh-cn',list:a.records.filter(r=>r.kind!=='summary'&&/^\d+$/.test(r.id)&&r.source!=='manual').map(r=>({id:r.id,gacha_type:r.gacha_type,uigf_gacha_type:poolOf(r),item_id:r.item_id,name:r.name,item_type:r.item_type,rank_type:r.rank_type,time:r.time,count:'1'}))}))};
 }
